@@ -137,7 +137,7 @@ contract  GTDToken is ERC20Interface, SafeMath {
         enqueue(msg.sender);
     }
     
-    function initiatePayment() public onlyOwner  {
+    function initiateSelling() public onlyOwner  {
         uint len = getQueueLength() > balances[owner]?  balances[owner]: getQueueLength();
         for(uint i = 0;i<len;i++){
             top_customer_address =  dequeue();
