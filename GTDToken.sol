@@ -42,15 +42,13 @@ contract  GTDToken is ERC20Interface, SafeMath {
     string public name;
     string public symbol;
     uint8 internal decimals; // 18 decimals is the strongly suggested default, avoid changing it
-    address owner;
+    address payable owner;
     uint256 internal _totalSupply;
-    
+    uint256 GTDTokenPrice;
     // queue
     mapping(uint256 => address) queue;
     uint256  internal first=1;
     uint256 internal last=0;
-    address customerAdd;
-    address top_customer_address;
 
     mapping(address => uint) balances;
     mapping(address => mapping(address => uint)) allowed;
@@ -63,7 +61,7 @@ contract  GTDToken is ERC20Interface, SafeMath {
     function dequeue() internal returns (address) {
         require(last >= first);  // non-empty queue
 
-        customerAdd = queue[first];
+        address customerAdd = queue[first];
 
         delete queue[first];
         first += 1;
@@ -79,13 +77,13 @@ contract  GTDToken is ERC20Interface, SafeMath {
      *
      * Initializes contract with initial supply tokens to the creator of the contract
      */
-    constructor() public {
+    constructor(uint256 tokenPrice) public {
         name = "GTDToken";
         symbol = "GTD";
         decimals = 0;
         _totalSupply = 100;
-        owner = 0x4aA3F950b089bda7474Ca0e87f91204A047BFEf8;
-
+        owner = msg.sender;
+        GTDTokenPrice = tokenPrice;
         balances[owner] = _totalSupply;
         emit Transfer(address(0), owner, _totalSupply);
     }
@@ -95,6 +93,15 @@ contract  GTDToken is ERC20Interface, SafeMath {
             require(msg.sender == owner);
             _;
         }
+    modifier checkBalance(){
+            require(msg.sender.balance > GTDTokenPrice);
+            _;
+        }
+    modifier checkStockAvailability(){
+            require(balanceOf(owner) >= getQueueLength());
+            _;
+        }
+        
 
     function totalSupply() internal view returns (uint) {
         return _totalSupply -  balances[owner];
@@ -133,17 +140,27 @@ contract  GTDToken is ERC20Interface, SafeMath {
         return true;
     }
     
-    function expressInterest() public {
+    function expressInterest() public checkBalance{
         enqueue(msg.sender);
+        owner.transfer(GTDTokenPrice);
+    }
+     
+    function payForToken() public payable{
+         owner.transfer(GTDTokenPrice);
     }
     
-    function initiateSelling() public onlyOwner  {
+    function getOwner() public view returns (address){
+       return owner;
+    }
+    
+    function initiateSelling() public onlyOwner checkStockAvailability {
         uint len = getQueueLength() > balances[owner]?  balances[owner]: getQueueLength();
         for(uint i = 0;i<len;i++){
-            top_customer_address =  dequeue();
+            address top_customer_address =  dequeue();
             transfer(top_customer_address,1);
         }
     }
+   
     
     function addNewStock(uint  tokens) public onlyOwner{
         balances[owner]+=tokens;
