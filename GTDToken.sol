@@ -44,7 +44,6 @@ contract  GTDToken is ERC20Interface, SafeMath {
     uint8 internal decimals; // 18 decimals is the strongly suggested default, avoid changing it
     address payable owner;
     uint256 internal _totalSupply;
-    uint256 GTDTokenPrice;
     // queue
     mapping(uint256 => address) queue;
     uint256  internal first=1;
@@ -77,24 +76,23 @@ contract  GTDToken is ERC20Interface, SafeMath {
      *
      * Initializes contract with initial supply tokens to the creator of the contract
      */
-    constructor(uint256 tokenPrice) public {
+    constructor() public {
         name = "GTDToken";
         symbol = "GTD";
         decimals = 0;
         _totalSupply = 100;
         owner = msg.sender;
-        GTDTokenPrice = tokenPrice;
         balances[owner] = _totalSupply;
         emit Transfer(address(0), owner, _totalSupply);
     }
     
-    // modifier
+    // modifiers -3
     modifier onlyOwner(){
             require(msg.sender == owner);
             _;
         }
     modifier checkBalance(){
-            require(msg.sender.balance > GTDTokenPrice);
+            require(msg.sender.balance > msg.value);
             _;
         }
     modifier checkStockAvailability(){
@@ -102,7 +100,7 @@ contract  GTDToken is ERC20Interface, SafeMath {
             _;
         }
         
-
+    //ERC20 Token methods
     function totalSupply() internal view returns (uint) {
         return _totalSupply -  balances[owner];
     }
@@ -139,14 +137,14 @@ contract  GTDToken is ERC20Interface, SafeMath {
         emit Transfer(from, to, tokens);
         return true;
     }
-    
-    function expressInterest() public checkBalance{
+    //Smart Contract methods - 4
+    function expressInterest() public checkBalance payable{
         enqueue(msg.sender);
-        owner.transfer(GTDTokenPrice);
+        payForToken();
     }
      
-    function payForToken() public payable{
-         owner.transfer(GTDTokenPrice);
+    function payForToken() internal{
+         owner.transfer(msg.value);
     }
     
     function getOwner() public view returns (address){
