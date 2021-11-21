@@ -41,10 +41,16 @@ contract SafeMath {
 contract  GTDToken is ERC20Interface, SafeMath {
     string public name;
     string public symbol;
+<<<<<<< HEAD
     uint8 internal decimals;
     address payable owner;
     uint256 internal _totalSupply;
     a
+=======
+    uint8 internal decimals; // 18 decimals is the strongly suggested default, avoid changing it
+    address payable owner;
+    uint256 internal _totalSupply;
+>>>>>>> 6113c986bf7cf30c94574a970653fc193b68a577
     // queue
     mapping(uint256 => address) queue;
     uint256  internal first=1;
@@ -146,12 +152,21 @@ contract  GTDToken is ERC20Interface, SafeMath {
      
     function payForToken() internal{
          owner.transfer(msg.value);
+<<<<<<< HEAD
     }
     
     function getOwner() public view returns (address){
        return owner;
     }
     
+=======
+    }
+    
+    function getOwner() public view returns (address){
+       return owner;
+    }
+    
+>>>>>>> 6113c986bf7cf30c94574a970653fc193b68a577
     function initiateSelling() public onlyOwner checkStockAvailability {
         uint len = getQueueLength() > balances[owner]?  balances[owner]: getQueueLength();
         for(uint i = 0;i<len;i++){
