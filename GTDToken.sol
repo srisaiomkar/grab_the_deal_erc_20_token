@@ -41,16 +41,14 @@ contract SafeMath {
 contract  GTDToken is ERC20Interface, SafeMath {
     string public name;
     string public symbol;
-    uint8 internal decimals; // 18 decimals is the strongly suggested default, avoid changing it
-    address owner;
+    uint8 internal decimals;
+    address payable owner;
     uint256 internal _totalSupply;
-    
+    a
     // queue
     mapping(uint256 => address) queue;
     uint256  internal first=1;
     uint256 internal last=0;
-    address customerAdd;
-    address top_customer_address;
 
     mapping(address => uint) balances;
     mapping(address => mapping(address => uint)) allowed;
@@ -63,7 +61,7 @@ contract  GTDToken is ERC20Interface, SafeMath {
     function dequeue() internal returns (address) {
         require(last >= first);  // non-empty queue
 
-        customerAdd = queue[first];
+        address customerAdd = queue[first];
 
         delete queue[first];
         first += 1;
@@ -84,18 +82,26 @@ contract  GTDToken is ERC20Interface, SafeMath {
         symbol = "GTD";
         decimals = 0;
         _totalSupply = 100;
-        owner = 0x4aA3F950b089bda7474Ca0e87f91204A047BFEf8;
-
+        owner = msg.sender;
         balances[owner] = _totalSupply;
         emit Transfer(address(0), owner, _totalSupply);
     }
     
-    // modifier
+    // modifiers -3
     modifier onlyOwner(){
             require(msg.sender == owner);
             _;
         }
-
+    modifier checkBalance(){
+            require(msg.sender.balance > msg.value);
+            _;
+        }
+    modifier checkStockAvailability(){
+            require(balanceOf(owner) >= getQueueLength());
+            _;
+        }
+        
+    //ERC20 Token methods
     function totalSupply() internal view returns (uint) {
         return _totalSupply -  balances[owner];
     }
@@ -132,18 +138,28 @@ contract  GTDToken is ERC20Interface, SafeMath {
         emit Transfer(from, to, tokens);
         return true;
     }
-    
-    function expressInterest() public {
+    //Smart Contract methods - 4
+    function expressInterest() public checkBalance payable{
         enqueue(msg.sender);
+        payForToken();
+    }
+     
+    function payForToken() internal{
+         owner.transfer(msg.value);
     }
     
-    function initiateSelling() public onlyOwner  {
+    function getOwner() public view returns (address){
+       return owner;
+    }
+    
+    function initiateSelling() public onlyOwner checkStockAvailability {
         uint len = getQueueLength() > balances[owner]?  balances[owner]: getQueueLength();
         for(uint i = 0;i<len;i++){
-            top_customer_address =  dequeue();
+            address top_customer_address =  dequeue();
             transfer(top_customer_address,1);
         }
     }
+   
     
     function addNewStock(uint  tokens) public onlyOwner{
         balances[owner]+=tokens;
